@@ -130,4 +130,5 @@ object JsonKeys {
   val STATE: String = "state"
   val DISTRICT: String = "district"
   val PROVIDER_NAME: String = "providerName"
+  val MAX_SCORE: String = "maxScore"
 }
