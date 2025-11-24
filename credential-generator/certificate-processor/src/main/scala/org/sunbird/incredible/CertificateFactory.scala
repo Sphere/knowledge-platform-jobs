@@ -89,6 +89,10 @@ object CertificateFactory {
       certificateExtension.state = Option.apply(certModel.state)
     }
 
+    if(StringUtils.isNotEmpty(certModel.maxScore)) {
+      certificateExtension.maxScore = Option.apply(certModel.maxScore)
+    }
+
     certificateExtension
   }
 

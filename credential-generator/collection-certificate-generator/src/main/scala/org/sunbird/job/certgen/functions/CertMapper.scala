@@ -42,7 +42,8 @@ class CertMapper(certConfig: CertificateConfig) {
         district = certReq.district,
         state = certReq.state,
         expiry = Option.apply(expiryDate),
-        providerName = certReq.providerName
+        providerName = certReq.providerName,
+        maxScore = certReq.maxScore
       )
       certModel
     }).toList

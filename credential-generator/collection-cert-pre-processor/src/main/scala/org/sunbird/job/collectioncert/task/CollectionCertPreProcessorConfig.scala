@@ -42,12 +42,16 @@ class CollectionCertPreProcessorConfig(override val config: Config) extends Base
     val dbBatchId = "batchid"
     val dbCourseId = "courseid"
     val dbUserId = "userid"
+
+    val userAssessmentSummaryKeyspace: String = config.getString("user-assessment-summary.keyspace")
+    val userAssessmentSummaryTable: String = config.getString("user-assessment-summary.table")
     
     //API URL
     val contentBasePath = config.getString("service.content.basePath")
     val learnerBasePath = config.getString("service.learner.basePath")
     val userReadApi = config.getString("user_read_api")
     val contentReadApi = config.getString("content_read_api")
+    val collectionHierarchyReadApi = config.getString("collection_hierarchy_read_api")
 
     // Metric List
     val totalEventsCount = "total-events-count"
