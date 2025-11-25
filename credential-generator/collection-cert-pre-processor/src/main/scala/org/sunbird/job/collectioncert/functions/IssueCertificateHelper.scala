@@ -351,7 +351,7 @@ trait IssueCertificateHelper {
             }
         }
         val regNurseRegMidwifeNumber = Option(personalDetails.getOrElse("regNurseRegMidwifeNumber", "[NA]").asInstanceOf[String]).getOrElse("[NA]")
-        val maxScore = getLastAssessmentScore(event.courseId, event.userId)(metrics, cassandraUtil = ???, config, cache, httpUtil)
+        val maxScore = getLastAssessmentScore(event.courseId, event.userId)(metrics, cassandraUtil, config, cache, httpUtil)
 
         val related = getRelatedData(event, enrolledUser, assessedUser, userDetails, additionalProps, certName, courseName)(config)
         val providerName = getCourseOrganisation(event.courseId)(metrics, config, cache, httpUtil)
