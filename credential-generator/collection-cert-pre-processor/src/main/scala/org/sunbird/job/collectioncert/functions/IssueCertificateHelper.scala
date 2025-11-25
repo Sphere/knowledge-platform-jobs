@@ -380,6 +380,8 @@ trait IssueCertificateHelper {
             "maxScore" -> maxScore
         )
 
+        logger.info(s"edata :: ${eData} ")
+
         ScalaJsonUtil.serialize(BEJobRequestEvent(edata = eData, `object` = EventObject(id= event.userId)))
     }
 
