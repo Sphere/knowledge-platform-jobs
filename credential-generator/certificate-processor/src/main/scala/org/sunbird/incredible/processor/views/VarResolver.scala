@@ -110,5 +110,5 @@ class VarResolver(certificateExtension: CertificateExtension) {
   def getCountry: String = certificateExtension.country.get
   def getState: String = certificateExtension.state.get
   def getDistrict: String = certificateExtension.district.get
-  def getMaxScore: String = certificateExtension.maxScore.get
+  def getMaxScore: String = certificateExtension.maxScore.getOrElse("")
 }
