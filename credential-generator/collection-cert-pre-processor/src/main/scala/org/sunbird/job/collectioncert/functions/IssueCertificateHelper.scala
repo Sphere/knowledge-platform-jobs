@@ -266,6 +266,7 @@ trait IssueCertificateHelper {
             val query = QueryBuilder.select().from(config.userAssessmentSummaryKeyspace, config.userAssessmentSummaryTable)
               .where(QueryBuilder.eq("user_id", userId))
               .and(QueryBuilder.eq("content_id", lastIdentifier))
+              .allowFiltering()
 
             val row = cassandraUtil.findOne(query.toString)
             Option(row).map(r => roundToTwoDecimals(r.getDouble("max_score")))
