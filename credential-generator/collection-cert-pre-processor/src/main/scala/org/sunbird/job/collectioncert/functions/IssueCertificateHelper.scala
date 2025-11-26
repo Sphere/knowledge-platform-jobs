@@ -201,7 +201,7 @@ trait IssueCertificateHelper {
         }
     }
 
-    def getLastAssessmentScore(courseId: String, userId: String)(metrics: Metrics, cassandraUtil: CassandraUtil, config: CollectionCertPreProcessorConfig, cache: DataCache, httpUtil: HttpUtil): Option[Double] = {
+    def getLastAssessmentScore(courseId: String, userId: String)(metrics: Metrics, cassandraUtil: CassandraUtil, config: CollectionCertPreProcessorConfig, cache: DataCache, httpUtil: HttpUtil): Option[String] = {
 
         def findLastJsonIdentifier(contentMap: ScalaMap[String, AnyRef]): Option[String] = {
 
@@ -258,36 +258,51 @@ trait IssueCertificateHelper {
               .map { case (id, _) => id }
         }
 
-        def roundToTwoDecimals(value: Double): Double = {
-            BigDecimal(value).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+        def formatScoreAsPercentage(value: Float): String = {
+            val rounded = BigDecimal(value.toDouble).setScale(2, BigDecimal.RoundingMode.HALF_UP)
+            // Check if the value is a whole number
+            if (rounded.remainder(1) == 0) {
+                s"${rounded.toInt}%"
+            } else {
+                s"$rounded%"
+            }
         }
 
-        def getMaxScoreFromDB(lastIdentifier: String): Option[Double] = {
+        def getMaxScoreFromDB(lastIdentifier: String): Option[String] = {
             val query = QueryBuilder.select().from(config.userAssessmentSummaryKeyspace, config.userAssessmentSummaryTable)
               .where(QueryBuilder.eq("user_id", userId))
               .and(QueryBuilder.eq("content_id", lastIdentifier))
               .allowFiltering()
 
             val row = cassandraUtil.findOne(query.toString)
-            Option(row).map(r => roundToTwoDecimals(r.getDouble("max_score")))
+            Option(row).map(r => formatScoreAsPercentage(r.getFloat("max_score")))
         }
 
-        // Get course hierarchy from cache or API
-        val courseHierarchy = Option(cache.getWithRetry("hierarchy_" + courseId))
-          .filter(_.nonEmpty)
-          .getOrElse {
-              val url = config.contentBasePath + config.collectionHierarchyReadApi + "/" + courseId
-              getAPICall(url, "content")(config, httpUtil, metrics)
-          }
+        val courseHierarchyOpt = Option(cache.getWithRetry("hierarchy_" + courseId))
+          .filter(h => h != null && h.nonEmpty)
 
-        // Find last JSON identifier and get score
-        for {
-            lastIdentifier <- findLastJsonIdentifier(courseHierarchy)
+        val courseHierarchy = courseHierarchyOpt.getOrElse {
+            println(s"Cache miss for course: $courseId, fetching from API")
+            val url = config.contentBasePath + config.collectionHierarchyReadApi + "/" + courseId
+            getAPICall(url, "content")(config, httpUtil, metrics)
+        }
+
+        val contentMap: ScalaMap[String, AnyRef] = courseHierarchy match {
+            case m: java.util.Map[_, _] => m.asScala.asInstanceOf[ScalaMap[String, AnyRef]]
+            case m: ScalaMap[_, _] => m.asInstanceOf[ScalaMap[String, AnyRef]]
+            case _ =>
+                println(s"Unexpected course hierarchy type: ${courseHierarchy.getClass}")
+                return None
+        }
+
+        val result = for {
+            lastIdentifier <- findLastJsonIdentifier(contentMap)
+            _ = println(s"Last JSON identifier found: $lastIdentifier")
             maxScore <- getMaxScoreFromDB(lastIdentifier)
-        } yield {
-            println(s"Last JSON identifier: $lastIdentifier, Max Score: $maxScore")
-            maxScore
-        }
+            _ = println(s"Max score retrieved: $maxScore")
+        } yield maxScore
+
+        result
     }
 
     def generateCertificateEvent(event: Event, template: Map[String, String], userDetails: Map[String, AnyRef], enrolledUser: EnrolledUser, assessedUser: AssessedUser, additionalProps: Map[String, List[String]], certName: String)(metrics:Metrics, cassandraUtil: CassandraUtil, config:CollectionCertPreProcessorConfig, cache:DataCache, httpUtil: HttpUtil) = {
