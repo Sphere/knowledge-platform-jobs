@@ -105,10 +105,10 @@ class VarResolver(certificateExtension: CertificateExtension) {
     else data
   }
 
-  def getRmNumber: String = certificateExtension.rmNumber.get
-  def getOrgName: String = certificateExtension.orgName.get
-  def getCountry: String = certificateExtension.country.get
-  def getState: String = certificateExtension.state.get
-  def getDistrict: String = certificateExtension.district.get
+  def getRmNumber: String = certificateExtension.rmNumber.getOrElse("")
+  def getOrgName: String = certificateExtension.orgName.getOrElse("")
+  def getCountry: String = certificateExtension.country.getOrElse("")
+  def getState: String = certificateExtension.state.getOrElse("")
+  def getDistrict: String = certificateExtension.district.getOrElse("")
   def getMaxScore: String = certificateExtension.maxScore.getOrElse("")
 }
