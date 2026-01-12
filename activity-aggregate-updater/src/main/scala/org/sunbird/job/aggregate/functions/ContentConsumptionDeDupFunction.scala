@@ -37,11 +37,16 @@ class ContentConsumptionDeDupFunction(config: ActivityAggregateUpdaterConfig)(im
 
   override def processElement(event: util.Map[String, AnyRef], context: ProcessFunction[util.Map[String, AnyRef], String]#Context, metrics: Metrics): Unit = {
     metrics.incCounter(config.totalEventCount)
+    println("ContentConsumptionDeDupFunction:: " + event.toString)
+
     val eData = event.get(config.eData).asInstanceOf[util.Map[String, AnyRef]].asScala
     val isBatchEnrollmentEvent: Boolean = StringUtils.equalsIgnoreCase(eData.getOrElse(config.action, "").asInstanceOf[String], config.batchEnrolmentUpdateCode)
     if (isBatchEnrollmentEvent) {
       val contents = eData.getOrElse(config.contents, new util.ArrayList[java.util.Map[String, AnyRef]]()).asInstanceOf[util.List[java.util.Map[String, AnyRef]]].asScala
+      println(s"ContentConsumptionDeDupFunction:: Total contents: ${contents.size}, edata.userId: ${eData.get(config.userId)}")
+
       val filteredContents = contents.filter(x => x.get("status") == 2).toList
+      println(s"ContentConsumptionDeDupFunction:: Filtered contents (status=2): ${filteredContents.size}, edata.userId: ${eData.get(config.userId)}")
       if (filteredContents.size == 0)
         metrics.incCounter(config.skipEventsCount)
       else

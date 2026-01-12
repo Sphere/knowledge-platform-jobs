@@ -63,7 +63,7 @@ class ActivityAggregatesFunction(config: ActivityAggregateUpdaterConfig, httpUti
 
     val jsonString=events.toString()
     println("inside process fun if condition checked **********")
-    println(jsonString)
+    println("ActivityAggregatesFunction:: " + jsonString)
     // Extract courseId
     val courseIdPattern = "courseId -> (\\w+)".r
     val courseId = courseIdPattern.findFirstMatchIn(jsonString).map(_.group(1))
