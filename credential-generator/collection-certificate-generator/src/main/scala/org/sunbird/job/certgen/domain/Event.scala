@@ -65,6 +65,4 @@ class Event(eventMap: java.util.Map[String, Any], partition: Int, offset: Long) 
   def state: String = readOrDefault[String]("edata.state", "")
   def district: String = readOrDefault[String]("edata.district", "")
   def providerName: String = readOrDefault[String]("edata.providerName", "")
-
-  def maxScore: String = readOrDefault("edata.maxScore", "")
 }

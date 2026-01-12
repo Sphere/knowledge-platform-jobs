@@ -1,7 +1,9 @@
 package org.sunbird.job.collectioncert.functions
 
+import java.text.SimpleDateFormat
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.{Row, TypeTokens}
+import com.twitter.util.Config.intoOption
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import org.sunbird.job.Metrics
@@ -10,9 +12,7 @@ import org.sunbird.job.collectioncert.domain.{AssessedUser, AssessmentUserAttemp
 import org.sunbird.job.collectioncert.task.CollectionCertPreProcessorConfig
 import org.sunbird.job.util.{CassandraUtil, HttpUtil, ScalaJsonUtil}
 
-import java.text.SimpleDateFormat
 import scala.collection.JavaConverters._
-import scala.collection.{Map => ScalaMap}
 
 trait IssueCertificateHelper {
     private[this] val logger = LoggerFactory.getLogger(classOf[CollectionCertPreProcessorFn])
@@ -38,7 +38,7 @@ trait IssueCertificateHelper {
         logger.info(s"userDetails :: ${userDetails} ")
         //generateCertificateEvent
         if(userDetails.nonEmpty) {
-            generateCertificateEvent(event, template, userDetails, enrolledUser, assessedUser, additionalProps, certName)(metrics, cassandraUtil, config, cache, httpUtil)
+            generateCertificateEvent(event, template, userDetails, enrolledUser, assessedUser, additionalProps, certName)(metrics, config, cache, httpUtil)
         } else {
             logger.info(s"""User :: ${event.userId} did not match the criteria for batch :: ${event.batchId} and course :: ${event.courseId}""")
             null
@@ -201,113 +201,26 @@ trait IssueCertificateHelper {
         }
     }
 
-    def getCourseOrganisation(courseId: String)(metrics: Metrics, config: CollectionCertPreProcessorConfig, cache: DataCache, httpUtil: HttpUtil): String = {
-      val courseMetadata = cache.getWithRetry(courseId)
-      var data: String = ""
-      if(null == courseMetadata || courseMetadata.isEmpty) {
-        val url = config.contentBasePath + config.contentReadApi + "/" + courseId
-        val response = getAPICall(url, "content")(config, httpUtil, metrics)
-        val orgData = response.get("organisation").toArray
-        val pm = orgData(0).toString
-        data = pm.substring(1, pm.length-1)
-      } else {
-        val orgData = courseMetadata.get("organisation").toArray
-        val pm = orgData(0).toString
-        data = pm.substring(1, pm.length-1)
-      }
-      data
-    }
-
-    def getLastAssessmentScore(courseId: String, userId: String)(metrics: Metrics, cassandraUtil: CassandraUtil, config: CollectionCertPreProcessorConfig, cache: DataCache, httpUtil: HttpUtil): Option[Double] = {
-
-        def findLastJsonIdentifier(contentMap: ScalaMap[String, AnyRef]): Option[String] = {
-
-            def collectJsonNodes(node: ScalaMap[String, AnyRef]): Seq[(String, Int)] = {
-                val mimeType = node.get("mimeType").map(_.toString)
-                val identifier = node.get("identifier").map(_.toString)
-                val index = node.get("index") match {
-                    case Some(i: java.lang.Integer) => i.intValue()
-                    case Some(i: java.lang.Double) => i.toInt
-                    case Some(i: java.lang.Long) => i.toInt
-                    case Some(i: java.lang.Number) => i.intValue()
-                    case _ => 0
-                }
-
-                val current = (mimeType, identifier) match {
-                    case (Some("application/json"), Some(id)) => Seq((id, index))
-                    case _ => Seq.empty
-                }
-
-                val children = node.get("children") match {
-                    case Some(childList: java.util.List[_]) =>
-                        childList.asScala.toSeq.flatMap {
-                            case childMap: java.util.Map[_, _] =>
-                                collectJsonNodes(childMap.asScala.asInstanceOf[ScalaMap[String, AnyRef]])
-                            case childMap: ScalaMap[_, _] =>
-                                collectJsonNodes(childMap.asInstanceOf[ScalaMap[String, AnyRef]])
-                            case _ => Seq.empty
-                        }
-                    case Some(childList: Seq[_]) =>
-                        childList.flatMap {
-                            case childMap: ScalaMap[_, _] =>
-                                collectJsonNodes(childMap.asInstanceOf[ScalaMap[String, AnyRef]])
-                            case childMap: java.util.Map[_, _] =>
-                                collectJsonNodes(childMap.asScala.asInstanceOf[ScalaMap[String, AnyRef]])
-                            case _ => Seq.empty
-                        }
-                    case Some(childList: java.util.Collection[_]) =>
-                        childList.asScala.toSeq.flatMap {
-                            case childMap: java.util.Map[_, _] =>
-                                collectJsonNodes(childMap.asScala.asInstanceOf[ScalaMap[String, AnyRef]])
-                            case childMap: ScalaMap[_, _] =>
-                                collectJsonNodes(childMap.asInstanceOf[ScalaMap[String, AnyRef]])
-                            case _ => Seq.empty
-                        }
-                    case _ => Seq.empty
-                }
-
-                current ++ children
-            }
-
-            collectJsonNodes(contentMap)
-              .sortBy { case (_, index) => index }
-              .lastOption
-              .map { case (id, _) => id }
-        }
-
-        def roundToTwoDecimals(value: Double): Double = {
-            BigDecimal(value).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
-        }
-
-        def getMaxScoreFromDB(lastIdentifier: String): Option[Double] = {
-            val query = QueryBuilder.select().from(config.userAssessmentSummaryKeyspace, config.userAssessmentSummaryTable)
-              .where(QueryBuilder.eq("user_id", userId))
-              .and(QueryBuilder.eq("content_id", lastIdentifier))
-
-            val row = cassandraUtil.findOne(query.toString)
-            Option(row).map(r => roundToTwoDecimals(r.getDouble("max_score")))
-        }
-
-        // Get course hierarchy from cache or API
-        val courseHierarchy = Option(cache.getWithRetry("hierarchy_" + courseId))
-          .filter(_.nonEmpty)
-          .getOrElse {
-              val url = config.contentBasePath + config.collectionHierarchyReadApi + "/" + courseId
-              getAPICall(url, "content")(config, httpUtil, metrics)
-          }
-
-        // Find last JSON identifier and get score
-        for {
-            lastIdentifier <- findLastJsonIdentifier(courseHierarchy)
-            maxScore <- getMaxScoreFromDB(lastIdentifier)
-        } yield {
-            println(s"Last JSON identifier: $lastIdentifier, Max Score: $maxScore")
-            maxScore
-        }
-    }
-
-    def generateCertificateEvent(event: Event, template: Map[String, String], userDetails: Map[String, AnyRef], enrolledUser: EnrolledUser, assessedUser: AssessedUser, additionalProps: Map[String, List[String]], certName: String)(metrics:Metrics, cassandraUtil: CassandraUtil, config:CollectionCertPreProcessorConfig, cache:DataCache, httpUtil: HttpUtil) = {
+    def generateCertificateEvent(event: Event, template: Map[String, String], userDetails: Map[String, AnyRef], enrolledUser: EnrolledUser, assessedUser: AssessedUser, additionalProps: Map[String, List[String]], certName: String)(metrics:Metrics, config:CollectionCertPreProcessorConfig, cache:DataCache, httpUtil: HttpUtil) = {
         logger.info(s"generateCertificateEvent called ")
+
+    def getCourseOrganisation(courseId: String)(metrics: Metrics, config: CollectionCertPreProcessorConfig, cache: DataCache, httpUtil: HttpUtil): String = {
+        val courseMetadata = cache.getWithRetry(courseId)
+        var data: String = ""
+        if(null == courseMetadata || courseMetadata.isEmpty) {
+            val url = config.contentBasePath + config.contentReadApi + "/" + courseId
+            val response = getAPICall(url, "content")(config, httpUtil, metrics)
+            val orgData = response.get("organisation").toArray
+            val pm = orgData(0).toString
+            data = pm.substring(1, pm.length-1)
+        } else {
+            val orgData = courseMetadata.get("organisation").toArray
+            val pm = orgData(0).toString
+            data = pm.substring(1, pm.length-1)
+        }
+        data        
+    }
+
         val firstName = Option(userDetails.getOrElse("firstName", "").asInstanceOf[String]).getOrElse("")
         val lastName = Option(userDetails.getOrElse("lastName", "").asInstanceOf[String]).getOrElse("")
         def nullStringCheck(name:String):String = {if(StringUtils.equalsIgnoreCase("null", name)) ""  else name}
@@ -350,7 +263,6 @@ trait IssueCertificateHelper {
             }
         }
         val regNurseRegMidwifeNumber = Option(personalDetails.getOrElse("regNurseRegMidwifeNumber", "[NA]").asInstanceOf[String]).getOrElse("[NA]")
-        val maxScore = getLastAssessmentScore(event.courseId, event.userId)(metrics, cassandraUtil = ???, config, cache, httpUtil)
 
         val related = getRelatedData(event, enrolledUser, assessedUser, userDetails, additionalProps, certName, courseName)(config)
         val providerName = getCourseOrganisation(event.courseId)(metrics, config, cache, httpUtil)
@@ -375,8 +287,7 @@ trait IssueCertificateHelper {
             "state" -> state,
             "district" -> district,
             "providerName" -> providerName,
-            "tag" -> event.batchId,
-            "maxScore" -> maxScore
+            "tag" -> event.batchId
         )
 
         ScalaJsonUtil.serialize(BEJobRequestEvent(edata = eData, `object` = EventObject(id= event.userId)))

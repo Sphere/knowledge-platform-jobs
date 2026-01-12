@@ -92,7 +92,6 @@ class VarResolver(certificateExtension: CertificateExtension) {
         put(JsonKeys.STATE, urlEncode(getState))
         put(JsonKeys.DISTRICT, urlEncode(getDistrict))
         put(JsonKeys.PROVIDER_NAME, urlEncode(getProviderName))
-        put(JsonKeys.MAX_SCORE, urlEncode(getMaxScore))
       }
     }
     metaData
@@ -110,5 +109,5 @@ class VarResolver(certificateExtension: CertificateExtension) {
   def getCountry: String = certificateExtension.country.get
   def getState: String = certificateExtension.state.get
   def getDistrict: String = certificateExtension.district.get
-  def getMaxScore: String = certificateExtension.maxScore.get
+
 }
