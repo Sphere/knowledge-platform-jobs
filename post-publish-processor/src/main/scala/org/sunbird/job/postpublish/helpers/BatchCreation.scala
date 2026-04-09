@@ -1,5 +1,6 @@
 package org.sunbird.job.postpublish.helpers
 
+import java.time.LocalDate
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import org.apache.commons.collections.{CollectionUtils, MapUtils}
 import org.apache.commons.lang3.StringUtils
@@ -10,6 +11,7 @@ import org.sunbird.job.util.{CassandraUtil, HttpUtil, JSONUtil, Neo4JUtil}
 import java.time.LocalDate
 import java.util
 import scala.collection.JavaConverters._
+import java.time.LocalDate
 
 trait BatchCreation {
 
@@ -36,8 +38,12 @@ trait BatchCreation {
         })
       }
     }
+    print(request)
     val httpRequest = JSONUtil.serialize(request)
+    print("httprequest")
+    print(httpRequest)
     val httpResponse = httpUtil.post(config.batchCreateAPIPath, httpRequest)
+    print(httpResponse)
     if (httpResponse.status == 200) {
       logger.info("Batch create success: " + httpResponse.body)
     } else {

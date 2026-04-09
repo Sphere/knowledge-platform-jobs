@@ -22,7 +22,11 @@ object ExtractableMimeTypeHelper {
   private val extractablePackageExtensions = List(".zip", ".h5p", ".epub")
 
   def getCloudStoreURL(obj: ObjectData, cloudStorageUtil: CloudStorageUtil, config: ContentPublishConfig): String = {
+    logger.info("Inside getCloudStoreURL")
     val path = getExtractionPath(obj, config, "latest")
+    logger.info("Inside getCloudStoreURL extraction path "+path)
+    logger.info("Inside getCloudStoreURL object mimeType "+obj.mimeType)
+    logger.info("Inside getCloudStoreURL extractableMimeTypes "+config.extractableMimeTypes)
     cloudStorageUtil.getURI(path, Option.apply(config.extractableMimeTypes.contains(obj.mimeType)))
   }
 
@@ -43,7 +47,10 @@ object ExtractableMimeTypeHelper {
     if (!isExtractedSnapshotExist(obj)) throw new InvalidInputException("Error! Snapshot Type Extraction doesn't Exists.")
     val sourcePrefix = getExtractionPath(obj, contentConfig, "snapshot")
     val destinationPrefix = getExtractionPath(obj, contentConfig, extractionType)
+    logger.info("sourcePrefix:::" + sourcePrefix)
+    logger.info("destinationPrefix:::" + destinationPrefix)    
     cloudStorageUtil.copyObjectsByPrefix(sourcePrefix, destinationPrefix, isFolder = true)
+    logger.info("Copy objects successful")
   }
 
   private def isExtractedSnapshotExist(obj: ObjectData): Boolean = {

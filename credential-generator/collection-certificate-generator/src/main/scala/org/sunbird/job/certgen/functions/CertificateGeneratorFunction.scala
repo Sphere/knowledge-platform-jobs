@@ -63,17 +63,17 @@ class CertificateGeneratorFunction(config: CertificateGeneratorConfig, httpUtil:
   override def processElement(event: Event,
                               context: KeyedProcessFunction[String, Event, String]#Context,
                               metrics: Metrics): Unit = {
-    println("Certificate data: " + event)
-    metrics.incCounter(config.totalEventsCount)
+       metrics.incCounter(config.totalEventsCount)
     try {
       val certValidator = new CertValidator()
       logger.info("Certificate generator | is rc integration enabled: " + config.enableRcCertificate)
+      logger.info(s"Event:  ${event}" )
       certValidator.validateGenerateCertRequest(event, config.enableSuppressException)
       if(certValidator.isNotIssued(event)(config, metrics, cassandraUtil)) {
         if(config.enableRcCertificate) generateCertificateUsingRC(event, context)(metrics)
-        else generateCertificate(event, context)(metrics)
-
-      } else {
+        else
+           generateCertificate(event, context)(metrics)
+         } else {
         metrics.incCounter(config.skippedEventCount)
         logger.info(s"Certificate already issued for: ${event.eData.getOrElse("userId", "")} ${event.related}")
       }
