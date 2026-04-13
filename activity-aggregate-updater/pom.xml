@@ -51,6 +51,11 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+	<dependency>
+            <groupId>org.json4s</groupId>
+            <artifactId>json4s-native_2.12</artifactId>
+            <version>4.0.6</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-test-utils_${scala.version}</artifactId>
