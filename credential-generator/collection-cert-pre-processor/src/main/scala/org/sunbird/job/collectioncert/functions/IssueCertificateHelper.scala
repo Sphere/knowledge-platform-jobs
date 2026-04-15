@@ -325,7 +325,7 @@ trait IssueCertificateHelper {
             val pm = orgData(0).toString
             data = pm.substring(1, pm.length-1)
         }
-        data        
+        data
     }
 
         val firstName = Option(userDetails.getOrElse("firstName", "").asInstanceOf[String]).getOrElse("")

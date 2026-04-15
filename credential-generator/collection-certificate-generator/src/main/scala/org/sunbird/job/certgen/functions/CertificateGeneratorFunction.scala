@@ -175,7 +175,10 @@ class CertificateGeneratorFunction(config: CertificateGeneratorConfig, httpUtil:
   @throws[ServerException]
   def addCertToRegistry(certReq: Event, request: Map[String, AnyRef], context: KeyedProcessFunction[String, Event, String]#Context)(implicit metrics: Metrics): Unit = {
     logger.info("adding certificate to the registry")
+    print("request : "+ request)
+    logger.info("adding certificate to the request"+request)
     val httpRequest = ScalaModuleJsonUtils.serialize(request)
+    logger.info("adding certificate to the httpRequest :: "+httpRequest)
     val httpResponse = httpUtil.post(config.certRegistryBaseUrl + config.addCertRegApi, httpRequest)
     if (httpResponse.status == 200) {
       logger.info("certificate added successfully to the registry " + httpResponse.body)
