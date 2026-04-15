@@ -23,6 +23,10 @@ import org.sunbird.job.util.{CassandraUtil, HttpUtil}
 import org.sunbird.job.{Metrics, WindowBaseProcessFunction}
 
 import scala.collection.JavaConverters._
+import scala.collection.JavaConverters._
+import org.json4s._
+import org.json4s.native.JsonMethods._
+
 
 class ActivityAggregatesFunction(config: ActivityAggregateUpdaterConfig, httpUtil: HttpUtil, @transient var cassandraUtil: CassandraUtil = null)
                                 (implicit val stringTypeInfo: TypeInformation[String])
@@ -57,6 +61,27 @@ class ActivityAggregatesFunction(config: ActivityAggregateUpdaterConfig, httpUti
               events: Iterable[Map[String, AnyRef]],
               metrics: Metrics): Unit = {
 
+    val jsonString=events.toString()
+    println("inside process fun if condition checked **********")
+    println("ActivityAggregatesFunction:: " + jsonString)
+    // Extract courseId
+    val courseIdPattern = "courseId -> (\\w+)".r
+    val courseId = courseIdPattern.findFirstMatchIn(jsonString).map(_.group(1))
+
+    // Extract contentId
+    val contentIdPattern = "contentId -> (\\w+)".r
+    val contentId = contentIdPattern.findFirstMatchIn(jsonString).map(_.group(1))
+
+    val course_Id:String=courseId.get
+    val content_Id:String=contentId.get
+
+    println(s"Course ID: $course_Id")
+    println(s"Content ID: $content_Id")
+
+    if(course_Id==content_Id){
+      println("course id and content id both are same we not process anything")
+    }else{
+    
     logger.debug("Input Events Size: " + events.toList.size)
     val inputUserConsumptionList: List[UserContentConsumption] = events
         .groupBy(key => (key.get(config.courseId), key.get(config.batchId), key.get(config.userId)))
@@ -69,7 +94,7 @@ class ActivityAggregatesFunction(config: ActivityAggregateUpdaterConfig, httpUti
         val enrichedContents = getContentStatusFromEvent(userConsumedContents)
         UserContentConsumption(userId = userId, batchId = batchId, courseId = courseId, enrichedContents)
       }).toList
-
+ 
     // Fetch the content status from the table in batch format
     val dbUserConsumption: Map[String, UserContentConsumption] = getContentStatusFromDB(events.toList, metrics)
 
@@ -116,7 +141,7 @@ class ActivityAggregatesFunction(config: ActivityAggregateUpdaterConfig, httpUti
     // Content AUDIT Event generation and pushing to output tag.
     finalUserConsumptionList.flatMap(userConsumption => contentAuditEvents(userConsumption)).foreach(event => context.output(config.auditEventOutputTag, gson.toJson(event)))
   }
-
+  }
   /**
    * Course Level Agg using the merged data of ContentConsumption per user, course and batch.
    */
