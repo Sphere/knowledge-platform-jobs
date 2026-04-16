@@ -74,7 +74,8 @@ class CollectionCertPreProcessorFn(config: CollectionCertPreProcessorConfig, htt
         } catch {
             case ex: Exception => {
                 metrics.incCounter(config.failedEventCount)
-                throw new InvalidEventException(ex.getMessage, Map("partition" -> event.partition, "offset" -> event.offset), ex)
+                logger.error(s"Error while processing message for Partition: ${event.partition} and Offset: ${event.offset}. Error : ${ex.getMessage}", ex)
+//                throw new InvalidEventException(ex.getMessage, Map("partition" -> event.partition, "offset" -> event.offset), ex)
             }
         }
         

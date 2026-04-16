@@ -41,7 +41,7 @@ trait ContentPublisher extends ObjectReader with ObjectValidator with ObjectEnri
     }
   }
 
-  override def getHierarchy(identifier: String, pkgVersion: Double, readerConfig: ExtDataConfig)(implicit cassandraUtil: CassandraUtil): Option[Map[String, AnyRef]] = None
+  override def getHierarchy(identifier: String, pkgVersion: Double, readerConfig: ExtDataConfig,  isChild: Boolean = false)(implicit cassandraUtil: CassandraUtil): Option[Map[String, AnyRef]] = None
 
   override def getExtDatas(identifiers: List[String], readerConfig: ExtDataConfig)(implicit cassandraUtil: CassandraUtil): Option[Map[String, AnyRef]] = None
 
@@ -66,8 +66,10 @@ trait ContentPublisher extends ObjectReader with ObjectValidator with ObjectEnri
     Files.deleteIfExists(new File(ExtractableMimeTypeHelper.getBasePath(obj.identifier, contentConfig.bundleLocation)).toPath)
 
     if (contentConfig.isECARExtractionEnabled && contentConfig.extractableMimeTypes.contains(obj.mimeType)) {
+      logger.info("Inside isECARExtractionEnabled and extractable mimetype")
       ExtractableMimeTypeHelper.copyExtractedContentPackage(obj, contentConfig, "version", cloudStorageUtil)
       ExtractableMimeTypeHelper.copyExtractedContentPackage(obj, contentConfig, "latest", cloudStorageUtil)
+      logger.info("Extraction to latest folder success")
     }
     val updatedPreviewUrl = updatePreviewUrl(obj, updatedPragma, cloudStorageUtil, contentConfig).getOrElse(updatedPragma)
     Some(new ObjectData(obj.identifier, updatedPreviewUrl, obj.extData, obj.hierarchy))
