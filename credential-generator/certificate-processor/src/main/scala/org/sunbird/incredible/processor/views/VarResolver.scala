@@ -91,6 +91,10 @@ class VarResolver(certificateExtension: CertificateExtension) {
         put(JsonKeys.COUNTRY, urlEncode(getCountry))
         put(JsonKeys.STATE, urlEncode(getState))
         put(JsonKeys.DISTRICT, urlEncode(getDistrict))
+        put(JsonKeys.BLOCK, urlEncode(getBlock))
+        put(JsonKeys.DESIGNATION, urlEncode(getDesignation))
+        put(JsonKeys.FACILITY_NAME, urlEncode(getFacilityName))
+        put(JsonKeys.NIN, urlEncode(getNIN))
         put(JsonKeys.PROVIDER_NAME, urlEncode(getProviderName))
         put(JsonKeys.MAX_SCORE, urlEncode(getMaxScore))
       }
@@ -110,5 +114,9 @@ class VarResolver(certificateExtension: CertificateExtension) {
   def getCountry: String = certificateExtension.country.getOrElse("")
   def getState: String = certificateExtension.state.getOrElse("")
   def getDistrict: String = certificateExtension.district.getOrElse("")
+  def getBlock: String = certificateExtension.block.getOrElse("")
+  def getDesignation: String = certificateExtension.designation.getOrElse("")
+  def getFacilityName: String = certificateExtension.facilityName.getOrElse("")
+  def getNIN: String = certificateExtension.nin.getOrElse("")
   def getMaxScore: String = certificateExtension.maxScore.getOrElse("")
 }

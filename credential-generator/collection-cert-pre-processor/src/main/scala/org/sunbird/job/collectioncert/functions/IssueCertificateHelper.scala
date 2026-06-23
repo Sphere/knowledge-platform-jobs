@@ -338,7 +338,11 @@ trait IssueCertificateHelper {
         logger.info(s"personalDetails :: ${personalDetails} ")
         logger.info(s"professionalDetails :: ${professionalDetails} ")
         var orgName: String = "[NA]"
-        logger.info(s"orgName :: ${orgName} ")
+        var designation: String = ""
+        var facilityName: String = ""
+        var nin: String = ""
+        var block: String = ""
+
         if (!professionalDetails.isEmpty) {
             val organizationDetails: Map[String, AnyRef] = professionalDetails.head
             logger.info(s"organizationDetails :: ${organizationDetails} ")
@@ -346,7 +350,13 @@ trait IssueCertificateHelper {
                 orgName = Option(organizationDetails.getOrElse("name", "[NA]").asInstanceOf[String]).getOrElse("[NA]")
                 if(orgName.isBlank)
                     orgName = "[NA]"
-                logger.info(s"orgName :: ${orgName} ")
+
+                designation = Option(organizationDetails.getOrElse("designation", "").asInstanceOf[String]).getOrElse("")
+                facilityName = Option(organizationDetails.getOrElse("facilityName", "").asInstanceOf[String]).getOrElse("")
+                nin = Option(organizationDetails.getOrElse("nin", "").asInstanceOf[String]).getOrElse("")
+                block = Option(organizationDetails.getOrElse("block", "").asInstanceOf[String]).getOrElse("")
+
+                logger.info(s"orgName :: $orgName,  designation :: $designation,  facilityName :: $facilityName,  nin :: $nin,  block :: $block")
             }
         }
         var address = Array[String]()
@@ -391,6 +401,10 @@ trait IssueCertificateHelper {
             "country" -> country,
             "state" -> state,
             "district" -> district,
+            "block" -> block,
+            "designation" -> designation,
+            "facilityName" -> facilityName,
+            "nin" -> nin,
             "providerName" -> providerName,
             "tag" -> event.batchId,
             "maxScore" -> maxScore

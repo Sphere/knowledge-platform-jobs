@@ -39,8 +39,12 @@ class CertMapper(certConfig: CertificateConfig) {
         rmNumber = certReq.rmNumber,
         orgName = certReq.orgName,
         country = certReq.country,
-        district = certReq.district,
         state = certReq.state,
+        district = certReq.district,
+        block = certReq.block,
+        designation = certReq.designation,
+        facilityName = certReq.facilityName,
+        nin = certReq.nin,
         expiry = Option.apply(expiryDate),
         providerName = certReq.providerName,
         maxScore = certReq.maxScore

@@ -81,12 +81,28 @@ object CertificateFactory {
       certificateExtension.country = Option.apply(certModel.country)
     }
 
+    if (StringUtils.isNotEmpty(certModel.state)) {
+      certificateExtension.state = Option.apply(certModel.state)
+    }
+
     if (StringUtils.isNotEmpty(certModel.district)) {
       certificateExtension.district = Option.apply(certModel.district)
     }
 
-    if (StringUtils.isNotEmpty(certModel.state)) {
-      certificateExtension.state = Option.apply(certModel.state)
+    if (StringUtils.isNotEmpty(certModel.block)) {
+      certificateExtension.block = Option.apply(certModel.block)
+    }
+
+    if (StringUtils.isNotEmpty(certModel.designation)) {
+      certificateExtension.designation = Option.apply(certModel.designation)
+    }
+
+    if (StringUtils.isNotEmpty(certModel.facilityName)) {
+      certificateExtension.facilityName = Option.apply(certModel.facilityName)
+    }
+
+    if (StringUtils.isNotEmpty(certModel.nin)) {
+      certificateExtension.nin = Option.apply(certModel.nin)
     }
 
     if(StringUtils.isNotEmpty(certModel.maxScore)) {

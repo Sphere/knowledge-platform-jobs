@@ -129,6 +129,9 @@ object JsonKeys {
   val COUNTRY: String = "country"
   val STATE: String = "state"
   val DISTRICT: String = "district"
+  val BLOCK: String = "block"
+  val FACILITY_NAME: String = "facilityName"
+  val NIN: String = "nin"
   val PROVIDER_NAME: String = "providerName"
   val MAX_SCORE: String = "maxScore"
 }
