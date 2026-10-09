@@ -47,7 +47,10 @@ class TransactionEventRouter(config: TransactionEventProcessorConfig)(implicit
   ): Unit = {
     try {
       metrics.incCounter(config.totalEventsCount)
-      if (event.transactionEventProcessorIsValid) {
+      if (isRestricted(event)) {
+        logger.info(s"Event not qualified for audit for Identifier : ${event.nodeUniqueId} (objectType ${event.objectType} is restricted).")
+        metrics.incCounter(config.skippedEventCount)
+      } else if (event.transactionEventProcessorIsValid) {
         logger.info("Valid event -> " + event.nodeUniqueId)
         context.output(config.outputTag, event)
       } else metrics.incCounter(config.skippedEventCount)
@@ -60,5 +63,18 @@ class TransactionEventRouter(config: TransactionEventProcessorConfig)(implicit
           ex
         )
     }
+  }
+
+  /**
+   * Object types listed in restrict.objectTypes are already kept out of search by
+   * SearchIndexerRouter. They are kept out of the audit, obsrv and audit-history
+   * branches here too: these are legacy types (Domain, Concept, Misconception...)
+   * with no schema on this platform, and the audit generator fails with a
+   * NullPointerException on an object type it has no definition for -- which stops
+   * the whole job on the first such event.
+   */
+  private[functions] def isRestricted(event: Event): Boolean = {
+    val objectType = event.objectType
+    objectType != null && config.restrictObjectTypes.contains(objectType)
   }
 }
